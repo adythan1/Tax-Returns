@@ -9,6 +9,7 @@ import About from "./pages/About";
 import Services from "./pages/Services";
 import DocumentUpload from "./pages/DocumentUpload";
 import Contact from "./pages/Contact";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,17 +20,25 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/portal" element={<DocumentUpload />} />
-            <Route path="/upload" element={<DocumentUpload />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Layout>
+        <Routes>
+          {/* Admin route without Layout */}
+          <Route path="/admin" element={<AdminDashboard />} />
+          
+          {/* Public routes with Layout */}
+          <Route path="*" element={
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/services" element={<Services />} />
+                <Route path="/portal" element={<DocumentUpload />} />
+                <Route path="/upload" element={<DocumentUpload />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Layout>
+          } />
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

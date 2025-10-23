@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import archiver from 'archiver';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,13 +30,16 @@ if (!fs.existsSync(uploadsDir)) {
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Create user-specific folder
-    const userFolder = path.join(uploadsDir, `${Date.now()}_${req.body.firstName || 'user'}_${req.body.lastName || ''}`);
-    if (!fs.existsSync(userFolder)) {
-      fs.mkdirSync(userFolder, { recursive: true });
+    // Create user-specific folder only once per request
+    if (!req.userFolder) {
+      const timestamp = Date.now();
+      const userFolder = path.join(uploadsDir, `${timestamp}_${req.body.firstName || 'user'}_${req.body.lastName || ''}`);
+      if (!fs.existsSync(userFolder)) {
+        fs.mkdirSync(userFolder, { recursive: true });
+      }
+      req.userFolder = userFolder; // Store for reuse across all files
     }
-    req.userFolder = userFolder; // Store for later use
-    cb(null, userFolder);
+    cb(null, req.userFolder);
   },
   filename: (req, file, cb) => {
     // Keep original filename with timestamp prefix
@@ -120,9 +124,51 @@ app.post('/api/submit-portal', upload.any(), async (req, res) => {
       });
     }
 
+    // Save metadata for admin dashboard
+    const userFolderPath = req.userFolder || path.join(uploadsDir, `${Date.now()}_${firstName}_${lastName}`);
+    
+    // Create file mapping with field names
+    const filesMetadata = [];
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        filesMetadata.push({
+          fieldName: file.fieldname,
+          fileName: file.filename,
+          originalName: file.originalname,
+          size: file.size,
+          type: path.extname(file.originalname)
+        });
+      });
+    }
+    
+    const metadata = {
+      firstName,
+      lastName,
+      email,
+      phone,
+      ssn,
+      address,
+      filingStatus,
+      taxYear,
+      serviceType,
+      additionalInfo,
+      submittedAt: new Date().toISOString(),
+      filesCount: req.files?.length || 0,
+      files: filesMetadata
+    };
+    
+    try {
+      fs.writeFileSync(
+        path.join(userFolderPath, 'metadata.json'),
+        JSON.stringify(metadata, null, 2)
+      );
+    } catch (err) {
+      console.error('Error saving metadata:', err);
+    }
+
     // Prepare email content
     const submissionDate = new Date().toLocaleString();
-    const folderPath = req.userFolder || 'Unknown';
+    const folderPath = userFolderPath;
 
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -234,6 +280,189 @@ function formatFileSize(bytes) {
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
+
+// ========================================
+// ADMIN API ENDPOINTS
+// ========================================
+
+// Get all submissions
+app.get('/api/admin/submissions', (req, res) => {
+  try {
+    const submissions = [];
+    const folders = fs.readdirSync(uploadsDir);
+
+    folders.forEach(folder => {
+      const folderPath = path.join(uploadsDir, folder);
+      const stats = fs.statSync(folderPath);
+      
+      if (stats.isDirectory()) {
+        // Parse folder name: timestamp_FirstName_LastName
+        const parts = folder.split('_');
+        const timestamp = parts[0];
+        const firstName = parts[1] || '';
+        const lastName = parts.slice(2).join('_') || '';
+
+        // Try to read metadata file if it exists
+        const metadataPath = path.join(folderPath, 'metadata.json');
+        let metadata = {};
+        let files = [];
+        
+        if (fs.existsSync(metadataPath)) {
+          try {
+            metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+            // Use files from metadata which includes field names
+            files = metadata.files || [];
+          } catch (e) {
+            console.error('Error reading metadata:', e);
+          }
+        }
+        
+        // If no metadata or no files in metadata, read from directory
+        if (files.length === 0) {
+          files = fs.readdirSync(folderPath)
+            .filter(filename => filename !== 'metadata.json')
+            .map(filename => {
+              const filePath = path.join(folderPath, filename);
+              const fileStats = fs.statSync(filePath);
+              return {
+                fileName: filename,
+                originalName: filename,
+                fieldName: 'unknown',
+                size: fileStats.size,
+                type: path.extname(filename)
+              };
+            });
+        }
+
+        submissions.push({
+          id: folder,
+          timestamp,
+          firstName: metadata.firstName || firstName,
+          lastName: metadata.lastName || lastName,
+          email: metadata.email || '',
+          phone: metadata.phone || '',
+          ssn: metadata.ssn || '',
+          address: metadata.address || '',
+          filingStatus: metadata.filingStatus || '',
+          taxYear: metadata.taxYear || '',
+          serviceType: metadata.serviceType || '',
+          additionalInfo: metadata.additionalInfo || '',
+          files,
+          folder
+        });
+      }
+    });
+
+    // Sort by timestamp (newest first)
+    submissions.sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp));
+
+    res.json({ success: true, submissions });
+  } catch (error) {
+    console.error('Error fetching submissions:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch submissions' });
+  }
+});
+
+// Download a specific file
+app.get('/api/admin/download', (req, res) => {
+  try {
+    const { folder, file } = req.query;
+
+    if (!folder || !file) {
+      return res.status(400).json({ success: false, message: 'Missing folder or file parameter' });
+    }
+
+    const filePath = path.join(uploadsDir, folder, file);
+
+    // Security check: ensure the path is within uploads directory
+    const normalizedPath = path.normalize(filePath);
+    if (!normalizedPath.startsWith(uploadsDir)) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ success: false, message: 'File not found' });
+    }
+
+    // Send file for download
+    res.download(filePath, file, (err) => {
+      if (err) {
+        console.error('Download error:', err);
+        if (!res.headersSent) {
+          res.status(500).json({ success: false, message: 'Download failed' });
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error downloading file:', error);
+    res.status(500).json({ success: false, message: 'Failed to download file' });
+  }
+});
+
+// Download all files in a folder as ZIP
+app.get('/api/admin/download-zip', (req, res) => {
+  try {
+    const { folder } = req.query;
+
+    if (!folder) {
+      return res.status(400).json({ success: false, message: 'Missing folder parameter' });
+    }
+
+    const folderPath = path.join(uploadsDir, folder);
+
+    // Security check: ensure the path is within uploads directory
+    const normalizedPath = path.normalize(folderPath);
+    if (!normalizedPath.startsWith(uploadsDir)) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+
+    // Check if folder exists
+    if (!fs.existsSync(folderPath) || !fs.statSync(folderPath).isDirectory()) {
+      return res.status(404).json({ success: false, message: 'Folder not found' });
+    }
+
+    // Set response headers for ZIP download
+    const zipFilename = `${folder}.zip`;
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${zipFilename}"`);
+
+    // Create ZIP archive
+    const archive = archiver('zip', {
+      zlib: { level: 9 } // Maximum compression
+    });
+
+    // Handle errors
+    archive.on('error', (err) => {
+      console.error('Archive error:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, message: 'Failed to create ZIP' });
+      }
+    });
+
+    // Pipe archive to response
+    archive.pipe(res);
+
+    // Add all files from folder to archive (except metadata.json)
+    const files = fs.readdirSync(folderPath);
+    files.forEach(file => {
+      if (file !== 'metadata.json') {
+        const filePath = path.join(folderPath, file);
+        if (fs.statSync(filePath).isFile()) {
+          archive.file(filePath, { name: file });
+        }
+      }
+    });
+
+    // Finalize the archive
+    archive.finalize();
+  } catch (error) {
+    console.error('Error creating ZIP:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, message: 'Failed to create ZIP' });
+    }
+  }
+});
 
 // Start server
 app.listen(PORT, () => {
