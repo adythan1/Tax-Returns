@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,11 @@ const DocumentUpload = () => {
   const { toast } = useToast();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Debug: Log when isSubmitting changes
+  React.useEffect(() => {
+    console.log('isSubmitting changed to:', isSubmitting);
+  }, [isSubmitting]);
   // Discrete document fields
   const [docs, setDocs] = useState({
     w2: [] as File[],
@@ -38,7 +43,16 @@ const DocumentUpload = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    console.log('handleSubmit called! Current step:', step, 'isSubmitting:', isSubmitting);
     e.preventDefault();
+    
+    // Only allow submission on step 3
+    if (step !== 3) {
+      console.log('❌ Form submission BLOCKED - not on step 3');
+      return;
+    }
+    
+    console.log('✅ Form submission proceeding...');
     setIsSubmitting(true);
 
     const form = e.target as HTMLFormElement;
@@ -52,7 +66,9 @@ const DocumentUpload = () => {
     });
 
     try {
-      const res = await fetch('/api/submit-portal', {
+      // Point to backend server
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+      const res = await fetch(`${backendUrl}/api/submit-portal`, {
         method: 'POST',
         body: formData,
       });
@@ -62,7 +78,7 @@ const DocumentUpload = () => {
       if (res.ok && data.success) {
         toast({
           title: "Submitted Successfully!",
-          description: `Your documents have been uploaded to Google Drive. We'll follow up within 24–48 hours.`,
+          description: `Your documents have been uploaded. We'll follow up within 24–48 hours.`,
         });
         
         // Reset form
@@ -126,9 +142,12 @@ const DocumentUpload = () => {
   };
 
   const onNext = () => {
+    console.log('onNext called, current step:', step);
     if (step === 1 && !validateStep1()) return;
     if (step === 2 && !validateStep2()) return;
-    setStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s));
+    const newStep = (step < 3 ? (step + 1) as 1 | 2 | 3 : step);
+    console.log('Moving to step:', newStep);
+    setStep(newStep);
   };
 
   const onPrev = () => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s));
@@ -164,7 +183,16 @@ const DocumentUpload = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form 
+                  onSubmit={handleSubmit} 
+                  onKeyDown={(e) => {
+                    // Prevent Enter key from submitting unless on final step
+                    if (e.key === 'Enter' && step !== 3) {
+                      e.preventDefault();
+                    }
+                  }}
+                  className="space-y-6"
+                >
                   {/* Personal Information */}
                   <div ref={personalRef} className={step === 1 ? "space-y-4" : "hidden"}>
                     <h3 className="text-lg font-semibold">Personal Information</h3>
@@ -498,7 +526,14 @@ const DocumentUpload = () => {
                     <div className="flex-1" />
                     <div className="flex gap-3">
                       {step < 3 ? (
-                        <Button type="button" onClick={onNext}>
+                        <Button 
+                          type="button" 
+                          onClick={(e) => {
+                            console.log('Next button clicked');
+                            e.preventDefault();
+                            onNext();
+                          }}
+                        >
                           Next
                         </Button>
                       ) : (
