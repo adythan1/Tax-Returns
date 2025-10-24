@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, FileText, CheckCircle2, AlertCircle, Plus } from "lucide-react";
+import { Upload, FileText, CheckCircle2, AlertCircle } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,16 +18,13 @@ const DocumentUpload = () => {
   React.useEffect(() => {
     console.log('isSubmitting changed to:', isSubmitting);
   }, [isSubmitting]);
-  // Discrete document fields - Updated with complete list
+  // Discrete document fields
   const [docs, setDocs] = useState({
     w2: [] as File[],
     driversLicense: [] as File[],
-    socialSecurityCard: [] as File[],
+    ssnCard: [] as File[],
     form1095: [] as File[],
-    form1099NEC: [] as File[],
-    form1098: [] as File[],
-    form1098T: [] as File[],
-    form1098E: [] as File[],
+    form1099: [] as File[],
     k1: [] as File[],
     other: [] as File[],
   });
@@ -86,18 +83,7 @@ const DocumentUpload = () => {
         
         // Reset form
         form.reset();
-        setDocs({ 
-          w2: [], 
-          driversLicense: [], 
-          socialSecurityCard: [], 
-          form1095: [], 
-          form1099NEC: [], 
-          form1098: [], 
-          form1098T: [], 
-          form1098E: [], 
-          k1: [], 
-          other: [] 
-        });
+        setDocs({ w2: [], driversLicense: [], ssnCard: [], form1095: [], form1099: [], k1: [], other: [] });
         setFilingStatus('');
         setTaxYear('');
         setServiceType('');
@@ -318,81 +304,20 @@ const DocumentUpload = () => {
                     <p className="text-sm text-muted-foreground">Keep it simple: open a section, click Upload, and you’re done.</p>
 
                     <Accordion type="multiple" className="w-full">
-                      {/* Payroll Documents */}
-                      <AccordionItem value="payroll" className="border rounded-lg px-4">
-                        <AccordionTrigger className="text-base font-medium">
-                          <div className="flex items-center gap-2">
-                            <span>Payroll Documents</span>
-                            <span className="text-xs text-muted-foreground font-normal">(Most clients have 3-5)</span>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="space-y-4 pt-2">
-                            {([
-                              { key: "w2", label: "W2 - Payroll Document", multiple: true },
-                            ] as { key: DocKey; label: string; multiple?: boolean }[]).map((field) => {
-                              const inputId = `file-${field.key}`;
-                              return (
-                                <div key={field.key} className="space-y-2">
-                                  <div className="flex items-center justify-between gap-3">
-                                    <Label htmlFor={inputId} className="font-normal flex items-center gap-2">
-                                      {field.label}
-                                      {field.multiple && <Plus className="h-4 w-4 text-primary" />}
-                                    </Label>
-                                    <div className="flex items-center gap-2">
-                                      {docs[field.key].length > 0 && (
-                                        <span className="text-xs rounded-full bg-secondary/40 px-2 py-1 text-foreground/80">
-                                          {docs[field.key].length} file{docs[field.key].length > 1 ? 's' : ''}
-                                        </span>
-                                      )}
-                                      <input
-                                        type="file"
-                                        id={inputId}
-                                        multiple
-                                        onChange={handleDocChange(field.key)}
-                                        className="hidden"
-                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                      />
-                                      <Button type="button" variant="outline" size="sm" onClick={openPicker(inputId)}>
-                                        {docs[field.key].length > 0 ? 'Add More' : 'Upload'}
-                                      </Button>
-                                    </div>
-                                  </div>
-                                  {docs[field.key].length > 0 && (
-                                    <div className="flex flex-wrap gap-2">
-                                      {docs[field.key].map((file, index) => (
-                                        <span key={index} className="inline-flex items-center gap-2 rounded-md border bg-muted px-2 py-1 text-xs">
-                                          <FileText className="h-3.5 w-3.5 text-primary" />
-                                          <span className="max-w-[200px] truncate">{file.name}</span>
-                                          <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => removeDocFile(field.key, index)}>×</button>
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      {/* Identification Documents */}
+                      {/* Identification */}
                       <AccordionItem value="identification" className="border rounded-lg px-4">
-                        <AccordionTrigger className="text-base font-medium">Identification Documents</AccordionTrigger>
+                        <AccordionTrigger className="text-base font-medium">Identification</AccordionTrigger>
                         <AccordionContent>
                           <div className="space-y-4 pt-2">
                             {([
-                              { key: "driversLicense", label: "Driver's License", multiple: false },
-                              { key: "socialSecurityCard", label: "Social Security Card", multiple: false },
-                            ] as { key: DocKey; label: string; multiple?: boolean }[]).map((field) => {
+                              { key: "driversLicense", label: "Driver's License (front/back)" },
+                              { key: "ssnCard", label: "Social Security Card" },
+                            ] as { key: DocKey; label: string }[]).map((field) => {
                               const inputId = `file-${field.key}`;
                               return (
                                 <div key={field.key} className="space-y-2">
                                   <div className="flex items-center justify-between gap-3">
-                                    <Label htmlFor={inputId} className="font-normal flex items-center gap-2">
-                                      {field.label}
-                                      {field.multiple && <Plus className="h-4 w-4 text-primary" />}
-                                    </Label>
+                                    <Label htmlFor={inputId} className="font-normal">{field.label}</Label>
                                     <div className="flex items-center gap-2">
                                       {docs[field.key].length > 0 && (
                                         <span className="text-xs rounded-full bg-secondary/40 px-2 py-1 text-foreground/80">
@@ -407,9 +332,7 @@ const DocumentUpload = () => {
                                         className="hidden"
                                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                                       />
-                                      <Button type="button" variant="outline" size="sm" onClick={openPicker(inputId)}>
-                                        {docs[field.key].length > 0 ? 'Add More' : 'Upload'}
-                                      </Button>
+                                      <Button type="button" variant="outline" size="sm" onClick={openPicker(inputId)}>Upload</Button>
                                     </div>
                                   </div>
                                   {docs[field.key].length > 0 && (
@@ -430,22 +353,69 @@ const DocumentUpload = () => {
                         </AccordionContent>
                       </AccordionItem>
 
-                      {/* Health Coverage Documents */}
+                      {/* Income Forms */}
+                      <AccordionItem value="income-forms" className="border rounded-lg px-4">
+                        <AccordionTrigger className="text-base font-medium">Income Forms</AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-4 pt-2">
+                            {([
+                              { key: "w2", label: "W2 Form" },
+                              { key: "form1099", label: "1099 Form" },
+                              { key: "k1", label: "K1 Form" },
+                            ] as { key: DocKey; label: string }[]).map((field) => {
+                              const inputId = `file-${field.key}`;
+                              return (
+                                <div key={field.key} className="space-y-2">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <Label htmlFor={inputId} className="font-normal">{field.label}</Label>
+                                    <div className="flex items-center gap-2">
+                                      {docs[field.key].length > 0 && (
+                                        <span className="text-xs rounded-full bg-secondary/40 px-2 py-1 text-foreground/80">
+                                          {docs[field.key].length} file{docs[field.key].length > 1 ? 's' : ''}
+                                        </span>
+                                      )}
+                                      <input
+                                        type="file"
+                                        id={inputId}
+                                        multiple
+                                        onChange={handleDocChange(field.key)}
+                                        className="hidden"
+                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                      />
+                                      <Button type="button" variant="outline" size="sm" onClick={openPicker(inputId)}>Upload</Button>
+                                    </div>
+                                  </div>
+                                  {docs[field.key].length > 0 && (
+                                    <div className="flex flex-wrap gap-2">
+                                      {docs[field.key].map((file, index) => (
+                                        <span key={index} className="inline-flex items-center gap-2 rounded-md border bg-muted px-2 py-1 text-xs">
+                                          <FileText className="h-3.5 w-3.5 text-primary" />
+                                          <span className="max-w-[200px] truncate">{file.name}</span>
+                                          <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => removeDocFile(field.key, index)}>×</button>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      {/* Health Coverage */}
                       <AccordionItem value="health" className="border rounded-lg px-4">
-                        <AccordionTrigger className="text-base font-medium">Health Coverage Documents</AccordionTrigger>
+                        <AccordionTrigger className="text-base font-medium">Health Coverage</AccordionTrigger>
                         <AccordionContent>
                           <div className="space-y-4 pt-2">
                             {([
-                              { key: "form1095", label: "1095 - Health Coverage", multiple: true },
-                            ] as { key: DocKey; label: string; multiple?: boolean }[]).map((field) => {
+                              { key: "form1095", label: "1095 Form (Health Coverage)" },
+                            ] as { key: DocKey; label: string }[]).map((field) => {
                               const inputId = `file-${field.key}`;
                               return (
                                 <div key={field.key} className="space-y-2">
                                   <div className="flex items-center justify-between gap-3">
-                                    <Label htmlFor={inputId} className="font-normal flex items-center gap-2">
-                                      {field.label}
-                                      {field.multiple && <Plus className="h-4 w-4 text-primary" />}
-                                    </Label>
+                                    <Label htmlFor={inputId} className="font-normal">{field.label}</Label>
                                     <div className="flex items-center gap-2">
                                       {docs[field.key].length > 0 && (
                                         <span className="text-xs rounded-full bg-secondary/40 px-2 py-1 text-foreground/80">
@@ -460,9 +430,7 @@ const DocumentUpload = () => {
                                         className="hidden"
                                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                                       />
-                                      <Button type="button" variant="outline" size="sm" onClick={openPicker(inputId)}>
-                                        {docs[field.key].length > 0 ? 'Add More' : 'Upload'}
-                                      </Button>
+                                      <Button type="button" variant="outline" size="sm" onClick={openPicker(inputId)}>Upload</Button>
                                     </div>
                                   </div>
                                   {docs[field.key].length > 0 && (
@@ -483,175 +451,14 @@ const DocumentUpload = () => {
                         </AccordionContent>
                       </AccordionItem>
 
-                      {/* Miscellaneous Income Documents */}
-                      <AccordionItem value="misc-income" className="border rounded-lg px-4">
-                        <AccordionTrigger className="text-base font-medium">Miscellaneous Income Documents</AccordionTrigger>
-                        <AccordionContent>
-                          <div className="space-y-4 pt-2">
-                            {([
-                              { key: "form1099NEC", label: "1099 NEC - Miscellaneous Income", multiple: true },
-                            ] as { key: DocKey; label: string; multiple?: boolean }[]).map((field) => {
-                              const inputId = `file-${field.key}`;
-                              return (
-                                <div key={field.key} className="space-y-2">
-                                  <div className="flex items-center justify-between gap-3">
-                                    <Label htmlFor={inputId} className="font-normal flex items-center gap-2">
-                                      {field.label}
-                                      {field.multiple && <Plus className="h-4 w-4 text-primary" />}
-                                    </Label>
-                                    <div className="flex items-center gap-2">
-                                      {docs[field.key].length > 0 && (
-                                        <span className="text-xs rounded-full bg-secondary/40 px-2 py-1 text-foreground/80">
-                                          {docs[field.key].length} file{docs[field.key].length > 1 ? 's' : ''}
-                                        </span>
-                                      )}
-                                      <input
-                                        type="file"
-                                        id={inputId}
-                                        multiple
-                                        onChange={handleDocChange(field.key)}
-                                        className="hidden"
-                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                      />
-                                      <Button type="button" variant="outline" size="sm" onClick={openPicker(inputId)}>
-                                        {docs[field.key].length > 0 ? 'Add More' : 'Upload'}
-                                      </Button>
-                                    </div>
-                                  </div>
-                                  {docs[field.key].length > 0 && (
-                                    <div className="flex flex-wrap gap-2">
-                                      {docs[field.key].map((file, index) => (
-                                        <span key={index} className="inline-flex items-center gap-2 rounded-md border bg-muted px-2 py-1 text-xs">
-                                          <FileText className="h-3.5 w-3.5 text-primary" />
-                                          <span className="max-w-[200px] truncate">{file.name}</span>
-                                          <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => removeDocFile(field.key, index)}>×</button>
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      {/* Mortgage & Interest Documents */}
-                      <AccordionItem value="mortgage" className="border rounded-lg px-4">
-                        <AccordionTrigger className="text-base font-medium">Mortgage & Interest Documents</AccordionTrigger>
-                        <AccordionContent>
-                          <div className="space-y-4 pt-2">
-                            {([
-                              { key: "form1098", label: "1098 - Mortgage Interest", multiple: true },
-                              { key: "form1098T", label: "1098-T - Tuition Statement", multiple: true },
-                              { key: "form1098E", label: "1098-E - Student Loan Interest", multiple: true },
-                            ] as { key: DocKey; label: string; multiple?: boolean }[]).map((field) => {
-                              const inputId = `file-${field.key}`;
-                              return (
-                                <div key={field.key} className="space-y-2">
-                                  <div className="flex items-center justify-between gap-3">
-                                    <Label htmlFor={inputId} className="font-normal flex items-center gap-2">
-                                      {field.label}
-                                      {field.multiple && <Plus className="h-4 w-4 text-primary" />}
-                                    </Label>
-                                    <div className="flex items-center gap-2">
-                                      {docs[field.key].length > 0 && (
-                                        <span className="text-xs rounded-full bg-secondary/40 px-2 py-1 text-foreground/80">
-                                          {docs[field.key].length} file{docs[field.key].length > 1 ? 's' : ''}
-                                        </span>
-                                      )}
-                                      <input
-                                        type="file"
-                                        id={inputId}
-                                        multiple
-                                        onChange={handleDocChange(field.key)}
-                                        className="hidden"
-                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                      />
-                                      <Button type="button" variant="outline" size="sm" onClick={openPicker(inputId)}>
-                                        {docs[field.key].length > 0 ? 'Add More' : 'Upload'}
-                                      </Button>
-                                    </div>
-                                  </div>
-                                  {docs[field.key].length > 0 && (
-                                    <div className="flex flex-wrap gap-2">
-                                      {docs[field.key].map((file, index) => (
-                                        <span key={index} className="inline-flex items-center gap-2 rounded-md border bg-muted px-2 py-1 text-xs">
-                                          <FileText className="h-3.5 w-3.5 text-primary" />
-                                          <span className="max-w-[200px] truncate">{file.name}</span>
-                                          <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => removeDocFile(field.key, index)}>×</button>
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      {/* LLC/Partnership Documents */}
-                      <AccordionItem value="business" className="border rounded-lg px-4">
-                        <AccordionTrigger className="text-base font-medium">LLC/Partnership Documents</AccordionTrigger>
-                        <AccordionContent>
-                          <div className="space-y-4 pt-2">
-                            {([
-                              { key: "k1", label: "K1 Form - LLC/Partnership", multiple: true },
-                            ] as { key: DocKey; label: string; multiple?: boolean }[]).map((field) => {
-                              const inputId = `file-${field.key}`;
-                              return (
-                                <div key={field.key} className="space-y-2">
-                                  <div className="flex items-center justify-between gap-3">
-                                    <Label htmlFor={inputId} className="font-normal flex items-center gap-2">
-                                      {field.label}
-                                      {field.multiple && <Plus className="h-4 w-4 text-primary" />}
-                                    </Label>
-                                    <div className="flex items-center gap-2">
-                                      {docs[field.key].length > 0 && (
-                                        <span className="text-xs rounded-full bg-secondary/40 px-2 py-1 text-foreground/80">
-                                          {docs[field.key].length} file{docs[field.key].length > 1 ? 's' : ''}
-                                        </span>
-                                      )}
-                                      <input
-                                        type="file"
-                                        id={inputId}
-                                        multiple
-                                        onChange={handleDocChange(field.key)}
-                                        className="hidden"
-                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                      />
-                                      <Button type="button" variant="outline" size="sm" onClick={openPicker(inputId)}>
-                                        {docs[field.key].length > 0 ? 'Add More' : 'Upload'}
-                                      </Button>
-                                    </div>
-                                  </div>
-                                  {docs[field.key].length > 0 && (
-                                    <div className="flex flex-wrap gap-2">
-                                      {docs[field.key].map((file, index) => (
-                                        <span key={index} className="inline-flex items-center gap-2 rounded-md border bg-muted px-2 py-1 text-xs">
-                                          <FileText className="h-3.5 w-3.5 text-primary" />
-                                          <span className="max-w-[200px] truncate">{file.name}</span>
-                                          <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => removeDocFile(field.key, index)}>×</button>
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      {/* Other Documents */}
+                      {/* Other */}
                       <AccordionItem value="other" className="border rounded-lg px-4">
                         <AccordionTrigger className="text-base font-medium">Other Documents</AccordionTrigger>
                         <AccordionContent>
                           <div className="space-y-4 pt-2">
                             {([
-                              { key: "other", label: "Other Documents", multiple: true },
-                            ] as { key: DocKey; label: string; multiple?: boolean }[]).map((field) => {
+                              { key: "other", label: "Other Documents" },
+                            ] as { key: DocKey; label: string }[]).map((field) => {
                               const inputId = `file-${field.key}`;
                               return (
                                 <div key={field.key} className="space-y-2">
@@ -754,8 +561,8 @@ const DocumentUpload = () => {
                     <p className="font-medium mb-1">Need Help?</p>
                     <p className="text-muted-foreground">
                       If you have questions about which documents to upload or need assistance with the form, 
-                      please contact us at <a href="mailto:support@accruefy.com" className="text-primary hover:underline">support@accruefy.com</a> or 
-                      call <a href="tel:5551234567" className="text-primary hover:underline">(555) 123-4567</a>
+                      please contact us at <a href="mailto:info@mytaxreturns.com" className="text-primary hover:underline">info@mytaxreturns.com</a> or 
+                      call <a href="tel:+16175600821" className="text-primary hover:underline">+1 617 5600 821</a>
                     </p>
                   </div>
                 </div>
