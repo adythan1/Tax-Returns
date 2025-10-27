@@ -72,6 +72,7 @@ a2enmod proxy
 a2enmod proxy_http
 a2enmod rewrite
 a2enmod ssl
+a2enmod headers
 systemctl restart apache2
 ```
 
@@ -122,14 +123,16 @@ Add this configuration:
     ProxyPass / http://127.0.0.1:3001/
     ProxyPassReverse / http://127.0.0.1:3001/
     
-    # Enable CORS if needed
-    Header always set Access-Control-Allow-Origin "*"
-    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-    Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
-    
     ErrorLog ${APACHE_LOG_DIR}/accruefy-backend-error.log
     CustomLog ${APACHE_LOG_DIR}/accruefy-backend-access.log combined
 </VirtualHost>
+```
+
+**Note:** If you need CORS support, ensure the `headers` module is enabled (`a2enmod headers`) and add these lines inside the VirtualHost:
+```apache
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
 ```
 
 ### 3.4 Enable Sites
@@ -189,7 +192,7 @@ Add your configuration:
 # Email Configuration
 EMAIL_SERVICE=gmail
 EMAIL_USER=myquicktaxreturns@gmail.com
-EMAIL_PASSWORD=your_app_password_here
+EMAIL_PASSWORD=pskuqmnwrqnweuwi
 ADMIN_EMAIL=info@kyzersolutions.com
 
 # Server Configuration
