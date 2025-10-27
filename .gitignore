@@ -6,6 +6,3 @@ dist
 *.log
 .vercel
 .DS_Store
-
-# Uploads folder (contains sensitive client documents)
-server/uploads/
