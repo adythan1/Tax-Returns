@@ -29,7 +29,7 @@ const Home = () => {
                 Professional Tax Filing & Accounting Made Simple
               </h1>
               <p className="text-lg lg:text-xl text-white/90">
-                Trust Accruefy for accurate, efficient, and stress-free tax filing. 
+                Trust QuickTaxReturns for accurate, efficient, and stress-free tax filing. 
                 Our certified professionals ensure you get the best returns while staying compliant.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -64,7 +64,7 @@ const Home = () => {
             <div>
               <h2 className="text-3xl lg:text-4xl font-bold mb-4">Who We Are</h2>
               <p className="text-base lg:text-lg text-muted-foreground">
-                Accruefy is a team of certified tax professionals and accountants dedicated to
+                QuickTaxReturns is a team of certified tax professionals and accountants dedicated to
                 simplifying taxes for individuals and businesses. We combine deep expertise with
                 modern tools to deliver accurate filings and clear guidance.
               </p>
@@ -184,13 +184,13 @@ const Home = () => {
           <div className="text-center mb-8">
             <h2 className="text-3xl lg:text-4xl font-bold mb-4">What Our Clients Say</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Real results from people and businesses who trust Accruefy
+              Real results from people and businesses who trust QuickTaxReturns
             </p>
           </div>
           <div className="grid md:grid-cols-2 gap-6">
             {[
               {
-                quote: "Accruefy found deductions I had missed for years. The process was smooth and stress-free.",
+                quote: "QuickTaxReturns found deductions I had missed for years. The process was smooth and stress-free.",
                 name: "Sarah M.",
                 role: "Freelance Designer",
               },
@@ -238,7 +238,7 @@ const Home = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl lg:text-4xl font-bold mb-4">Let's Simplify Your Taxes Together</h2>
           <p className="text-lg lg:text-xl mb-8 text-white/90 max-w-2xl mx-auto">
-            Join thousands of satisfied clients who trust Accruefy with their tax and accounting needs
+            Join thousands of satisfied clients who trust QuickTaxReturns with their tax and accounting needs
           </p>
           <Link to="/portal">
             <Button size="lg" variant="secondary" className="text-base font-semibold">

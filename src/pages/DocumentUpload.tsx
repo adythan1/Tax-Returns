@@ -24,7 +24,10 @@ const DocumentUpload = () => {
     driversLicense: [] as File[],
     ssnCard: [] as File[],
     form1095: [] as File[],
-    form1099: [] as File[],
+    form1099NEC: [] as File[],
+    form1098: [] as File[],
+    form1098T: [] as File[],
+    form1098E: [] as File[],
     k1: [] as File[],
     other: [] as File[],
   });
@@ -83,10 +86,11 @@ const DocumentUpload = () => {
         
         // Reset form
         form.reset();
-        setDocs({ w2: [], driversLicense: [], ssnCard: [], form1095: [], form1099: [], k1: [], other: [] });
+        setDocs({ w2: [], driversLicense: [], ssnCard: [], form1095: [], form1099NEC: [], form1098: [], form1098T: [], form1098E: [], k1: [], other: [] });
         setFilingStatus('');
         setTaxYear('');
         setServiceType('');
+        setFirstTimeFiling('');
         setStep(1);
       } else {
         toast({
@@ -118,6 +122,27 @@ const DocumentUpload = () => {
   const [filingStatus, setFilingStatus] = useState("");
   const [taxYear, setTaxYear] = useState("");
   const [serviceType, setServiceType] = useState("");
+  const [firstTimeFiling, setFirstTimeFiling] = useState("");
+  
+  // Calculate available tax years dynamically
+  const getAvailableTaxYears = () => {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth(); // 0-11
+    
+    const years = [];
+    
+    // After December 31st (January 1st onwards), include the previous year
+    if (currentMonth >= 0) { // January is month 0
+      years.push(currentYear - 1); // Previous year becomes available
+    }
+    
+    // Always include 2-3 years back for amendments/late filings
+    years.push(currentYear - 2);
+    years.push(currentYear - 3);
+    
+    return years.sort((a, b) => b - a); // Sort descending (newest first)
+  };
 
   const validateStep1 = () => {
     const container = personalRef.current;
@@ -134,8 +159,8 @@ const DocumentUpload = () => {
 
   const validateStep2 = () => {
     // Radix Selects are not native <select>, so enforce manually
-    if (!filingStatus || !taxYear || !serviceType) {
-      toast({ title: "Missing information", description: "Please select Filing Status, Tax Year, and Service Type to continue." });
+    if (!filingStatus || !taxYear || !serviceType || !firstTimeFiling) {
+      toast({ title: "Missing information", description: "Please complete all required fields to continue." });
       return false;
     }
     return true;
@@ -220,12 +245,6 @@ const DocumentUpload = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="ssn">Social Security Number *</Label>
-                      <Input id="ssn" name="ssn" required={step === 1} placeholder="XXX-XX-XXXX" maxLength={11} />
-                      <p className="text-xs text-muted-foreground">Your information is encrypted and secure</p>
-                    </div>
-
-                    <div className="space-y-2">
                       <Label htmlFor="address">Address *</Label>
                       <Input id="address" name="address" required={step === 1} placeholder="123 Main Street, City, State ZIP" />
                     </div>
@@ -239,6 +258,7 @@ const DocumentUpload = () => {
                     <input type="hidden" name="filingStatus" value={filingStatus} />
                     <input type="hidden" name="taxYear" value={taxYear} />
                     <input type="hidden" name="serviceType" value={serviceType} />
+                    <input type="hidden" name="firstTimeFiling" value={firstTimeFiling} />
                     
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -263,9 +283,9 @@ const DocumentUpload = () => {
                             <SelectValue placeholder="Select year" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="2024">2024</SelectItem>
-                            <SelectItem value="2023">2023</SelectItem>
-                            <SelectItem value="2022">2022</SelectItem>
+                            {getAvailableTaxYears().map(year => (
+                              <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -288,6 +308,25 @@ const DocumentUpload = () => {
                     </div>
 
                     <div className="space-y-2">
+                      <Label htmlFor="firstTimeFiling">First time filing with us? *</Label>
+                      <Select value={firstTimeFiling} onValueChange={setFirstTimeFiling}>
+                        <SelectTrigger id="firstTimeFiling">
+                          <SelectValue placeholder="Select option" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes</SelectItem>
+                          <SelectItem value="no">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {firstTimeFiling === "yes" && (
+                        <p className="text-sm text-amber-600 dark:text-amber-500 flex items-start gap-2 mt-2 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-md border border-amber-200 dark:border-amber-900">
+                          <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                          <span>First-time filers must upload copies of Driver's License and Social Security Card in Step 3.</span>
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
                       <Label htmlFor="additionalInfo">Additional Information</Label>
                       <Textarea 
                         id="additionalInfo"
@@ -301,17 +340,19 @@ const DocumentUpload = () => {
                   {/* Portal: Discrete Document Uploads */}
                   <div ref={docsRef} className={step === 3 ? "space-y-6 pt-4 border-t" : "hidden"}>
                     <h3 className="text-lg font-semibold">Required Documents</h3>
-                    <p className="text-sm text-muted-foreground">Keep it simple: open a section, click Upload, and you’re done.</p>
+                    <p className="text-sm text-muted-foreground">Upload copies of all relevant documents. Most clients have 3-5 W2 forms.</p>
 
                     <Accordion type="multiple" className="w-full">
                       {/* Identification */}
                       <AccordionItem value="identification" className="border rounded-lg px-4">
-                        <AccordionTrigger className="text-base font-medium">Identification</AccordionTrigger>
+                        <AccordionTrigger className="text-base font-medium">
+                          Identification Documents {firstTimeFiling === "yes" && <span className="text-amber-600 text-sm ml-2">(Required for first-time filers)</span>}
+                        </AccordionTrigger>
                         <AccordionContent>
                           <div className="space-y-4 pt-2">
                             {([
-                              { key: "driversLicense", label: "Driver's License (front/back)" },
-                              { key: "ssnCard", label: "Social Security Card" },
+                              { key: "driversLicense", label: "Driver's License - Identification document" },
+                              { key: "ssnCard", label: "Social Security Card - Identification Document" },
                             ] as { key: DocKey; label: string }[]).map((field) => {
                               const inputId = `file-${field.key}`;
                               return (
@@ -355,13 +396,13 @@ const DocumentUpload = () => {
 
                       {/* Income Forms */}
                       <AccordionItem value="income-forms" className="border rounded-lg px-4">
-                        <AccordionTrigger className="text-base font-medium">Income Forms</AccordionTrigger>
+                        <AccordionTrigger className="text-base font-medium">Income & Payroll Documents</AccordionTrigger>
                         <AccordionContent>
                           <div className="space-y-4 pt-2">
                             {([
-                              { key: "w2", label: "W2 Form" },
-                              { key: "form1099", label: "1099 Form" },
-                              { key: "k1", label: "K1 Form" },
+                              { key: "w2", label: "W2 - Payroll document (Most clients have 3-5)" },
+                              { key: "form1099NEC", label: "1099-NEC - Miscellaneous Income" },
+                              { key: "k1", label: "K1 Form - LLC/Partnership document" },
                             ] as { key: DocKey; label: string }[]).map((field) => {
                               const inputId = `file-${field.key}`;
                               return (
@@ -409,7 +450,57 @@ const DocumentUpload = () => {
                         <AccordionContent>
                           <div className="space-y-4 pt-2">
                             {([
-                              { key: "form1095", label: "1095 Form (Health Coverage)" },
+                              { key: "form1095", label: "1095 - Health Coverage document" },
+                            ] as { key: DocKey; label: string }[]).map((field) => {
+                              const inputId = `file-${field.key}`;
+                              return (
+                                <div key={field.key} className="space-y-2">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <Label htmlFor={inputId} className="font-normal">{field.label}</Label>
+                                    <div className="flex items-center gap-2">
+                                      {docs[field.key].length > 0 && (
+                                        <span className="text-xs rounded-full bg-secondary/40 px-2 py-1 text-foreground/80">
+                                          {docs[field.key].length} file{docs[field.key].length > 1 ? 's' : ''}
+                                        </span>
+                                      )}
+                                      <input
+                                        type="file"
+                                        id={inputId}
+                                        multiple
+                                        onChange={handleDocChange(field.key)}
+                                        className="hidden"
+                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                      />
+                                      <Button type="button" variant="outline" size="sm" onClick={openPicker(inputId)}>Upload</Button>
+                                    </div>
+                                  </div>
+                                  {docs[field.key].length > 0 && (
+                                    <div className="flex flex-wrap gap-2">
+                                      {docs[field.key].map((file, index) => (
+                                        <span key={index} className="inline-flex items-center gap-2 rounded-md border bg-muted px-2 py-1 text-xs">
+                                          <FileText className="h-3.5 w-3.5 text-primary" />
+                                          <span className="max-w-[200px] truncate">{file.name}</span>
+                                          <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => removeDocFile(field.key, index)}>×</button>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      {/* Mortgage & Interest Documents */}
+                      <AccordionItem value="mortgage-interest" className="border rounded-lg px-4">
+                        <AccordionTrigger className="text-base font-medium">Mortgage & Interest Documents</AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-4 pt-2">
+                            {([
+                              { key: "form1098", label: "1098 - Mortgage Interest Document" },
+                              { key: "form1098T", label: "1098-T Form - Tuition statement" },
+                              { key: "form1098E", label: "1098-E - Student Loan Interest" },
                             ] as { key: DocKey; label: string }[]).map((field) => {
                               const inputId = `file-${field.key}`;
                               return (
@@ -457,7 +548,7 @@ const DocumentUpload = () => {
                         <AccordionContent>
                           <div className="space-y-4 pt-2">
                             {([
-                              { key: "other", label: "Other Documents" },
+                              { key: "other", label: "Other documents/Others" },
                             ] as { key: DocKey; label: string }[]).map((field) => {
                               const inputId = `file-${field.key}`;
                               return (

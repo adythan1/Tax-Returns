@@ -40,7 +40,7 @@ const About = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl lg:text-5xl font-bold mb-6 animate-fade-in">
-              About Accruefy
+              About QuickTaxReturns
             </h1>
             <p className="text-lg lg:text-xl text-primary-foreground/90 animate-slide-up">
               Your trusted partner in tax filing and accounting excellence since 2009
@@ -57,7 +57,7 @@ const About = () => {
               <h2 className="text-3xl lg:text-4xl font-bold mb-6">Our Story</h2>
               <div className="space-y-4 text-base lg:text-lg text-muted-foreground">
                 <p>
-                  Accruefy was founded with a simple yet powerful vision: to make professional 
+                  QuickTaxReturns was founded with a simple yet powerful vision: to make professional 
                   tax and accounting services accessible to everyone. What started as a small 
                   practice has grown into a trusted firm serving thousands of clients nationwide.
                 </p>
@@ -68,7 +68,7 @@ const About = () => {
                   unwavering commitment to client satisfaction.
                 </p>
                 <p>
-                  Today, Accruefy stands as a leading provider of tax and accounting services, 
+                  Today, QuickTaxReturns stands as a leading provider of tax and accounting services, 
                   combining traditional expertise with modern technology to deliver efficient, 
                   accurate, and personalized solutions for every client.
                 </p>
@@ -77,7 +77,7 @@ const About = () => {
             <div>
               <img
                 src={aboutImage}
-                alt="Accruefy team collaboration"
+                alt="QuickTaxReturns team collaboration"
                 className="rounded-lg shadow-professional"
               />
             </div>
@@ -144,7 +144,7 @@ const About = () => {
       <section className="py-16 lg:py-24 bg-gradient-accent text-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl lg:text-4xl font-bold mb-4">
-            Ready to Experience the Accruefy Difference?
+            Ready to Experience the QuickTaxReturns Difference?
           </h2>
           <p className="text-lg lg:text-xl mb-8 text-white/90 max-w-2xl mx-auto">
             Let our experienced team handle your tax and accounting needs with the care and expertise you deserve

@@ -13,7 +13,7 @@ const Navigation = () => {
     { path: "/", label: "Home" },
     { path: "/about", label: "About" },
     { path: "/services", label: "Services" },
-  { path: "/portal", label: "Portal" },
+    { path: "/portal", label: "Portal" },
     { path: "/contact", label: "Contact" },
   ];
 
@@ -34,7 +34,7 @@ const Navigation = () => {
               </div>
             </div>
             <span className="text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-info">
-              Accruefy
+              QuickTaxReturns
             </span>
           </Link>
 
@@ -110,7 +110,7 @@ const Footer = () => {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-hero shadow-colored">
                 <FileText className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-info">Accruefy</span>
+              <span className="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-info">QuickTaxReturns</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Professional tax filing and accounting assistance. We help you maximize deductions,
@@ -164,7 +164,7 @@ const Footer = () => {
         </div>
 
         <div className="mt-10 flex flex-col md:flex-row items-center justify-between gap-4 border-t pt-6 text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} Accruefy. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} QuickTaxReturns. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <a href="#" className="hover:text-primary transition-colors">Privacy</a>
             <a href="#" className="hover:text-primary transition-colors">Terms</a>
