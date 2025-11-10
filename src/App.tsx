@@ -11,6 +11,7 @@ import Services from "./pages/Services";
 import DocumentUpload from "./pages/DocumentUpload";
 import Contact from "./pages/Contact";
 import AdminDashboard from "./pages/AdminDashboard";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
                 <Route path="/portal" element={<DocumentUpload />} />
                 <Route path="/upload" element={<DocumentUpload />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Layout>
