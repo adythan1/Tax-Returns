@@ -71,12 +71,22 @@ const DocumentUpload = () => {
     try {
       // Point to backend server
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+      console.log('Submitting to:', `${backendUrl}/api/submit-portal`);
+      
+      // Create an AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+      
       const res = await fetch(`${backendUrl}/api/submit-portal`, {
         method: 'POST',
         body: formData,
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
 
       const data = await res.json();
+      console.log('Server response:', data);
 
       if (res.ok && data.success) {
         toast({
@@ -96,14 +106,25 @@ const DocumentUpload = () => {
         toast({
           title: "Submission Failed",
           description: data.message || "Please try again or contact support.",
+          variant: "destructive"
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Submission error:', error);
-      toast({
-        title: "Network Error",
-        description: "Please check your connection and try again.",
-      });
+      
+      if (error.name === 'AbortError') {
+        toast({
+          title: "Request Timeout",
+          description: "The server took too long to respond. Your submission may have been saved. Please check with support.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Network Error",
+          description: "Please check your connection and try again.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }

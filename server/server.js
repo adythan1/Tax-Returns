@@ -74,6 +74,15 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Verify email configuration on startup
+transporter.verify(function (error, success) {
+  if (error) {
+    console.error('❌ Email configuration error:', error);
+  } else {
+    console.log('✅ Email server is ready to send messages');
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
@@ -239,9 +248,16 @@ app.post('/api/submit-portal', upload.any(), async (req, res) => {
       // }))
     };
 
-    await transporter.sendMail(mailOptions);
-
-    console.log('Email sent successfully to:', mailOptions.to);
+    // Send email and wait for confirmation
+    try {
+      const emailResult = await transporter.sendMail(mailOptions);
+      console.log('✅ Email sent successfully to:', mailOptions.to);
+      console.log('Email ID:', emailResult.messageId);
+    } catch (emailError) {
+      console.error('❌ Email sending failed:', emailError);
+      // Still save the submission but note that email failed
+      console.warn('⚠️  Submission saved but email notification failed');
+    }
 
     // Send success response
     res.json({
@@ -252,7 +268,7 @@ app.post('/api/submit-portal', upload.any(), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Submission error:', error);
+    console.error('❌ Submission error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to process submission',
