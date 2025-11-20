@@ -156,7 +156,7 @@ const AdminDashboard = () => {
     try {
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
       const res = await fetch(`${backendUrl}/api/admin/submission/${encodeURIComponent(submissionToDelete.folder)}`, {
-        method: 'DELETE',
+        method: 'POST',
       });
 
       const data = await res.json();

@@ -481,7 +481,7 @@ app.get('/api/admin/download-zip', (req, res) => {
 });
 
 // Delete a submission
-app.delete('/api/admin/submission/:folderId', (req, res) => {
+app.post('/api/admin/submission/:folderId', (req, res) => {
   try {
     const { folderId } = req.params;
 
