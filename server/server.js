@@ -480,6 +480,44 @@ app.get('/api/admin/download-zip', (req, res) => {
   }
 });
 
+// Delete a submission
+app.delete('/api/admin/submission/:folderId', (req, res) => {
+  try {
+    const { folderId } = req.params;
+
+    if (!folderId) {
+      return res.status(400).json({ success: false, message: 'Missing folder ID' });
+    }
+
+    const folderPath = path.join(uploadsDir, folderId);
+
+    // Security check: ensure the path is within uploads directory
+    const normalizedPath = path.normalize(folderPath);
+    if (!normalizedPath.startsWith(uploadsDir)) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+
+    // Check if folder exists
+    if (!fs.existsSync(folderPath)) {
+      return res.status(404).json({ success: false, message: 'Submission not found' });
+    }
+
+    // Delete the folder and all its contents recursively
+    fs.rmSync(folderPath, { recursive: true, force: true });
+
+    console.log(`✅ Deleted submission: ${folderId}`);
+
+    res.json({
+      success: true,
+      message: 'Submission deleted successfully',
+      folderId
+    });
+  } catch (error) {
+    console.error('Error deleting submission:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete submission' });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
