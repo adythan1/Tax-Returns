@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Download, Eye, FileText, Loader2, Lock } from "lucide-react";
+import { Download, Eye, FileText, Loader2, Lock, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Submission {
@@ -40,6 +41,9 @@ const AdminDashboard = () => {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [submissionToDelete, setSubmissionToDelete] = useState<Submission | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Simple password check (in production, use proper auth)
   const handleLogin = (e: React.FormEvent) => {
@@ -136,6 +140,56 @@ const AdminDashboard = () => {
         description: "Could not download ZIP file",
         variant: "destructive",
       });
+    }
+  };
+
+  // Delete submission
+  const handleDeleteClick = (submission: Submission) => {
+    setSubmissionToDelete(submission);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!submissionToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+      const res = await fetch(`${backendUrl}/api/admin/submission/${encodeURIComponent(submissionToDelete.folder)}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        toast({
+          title: "Deleted Successfully",
+          description: `Submission from ${submissionToDelete.firstName} ${submissionToDelete.lastName} has been deleted.`,
+        });
+
+        // Refresh submissions list
+        await fetchSubmissions();
+
+        // Close dialogs
+        setIsDeleteDialogOpen(false);
+        setIsDetailsOpen(false);
+        setSubmissionToDelete(null);
+      } else {
+        toast({
+          title: "Delete Failed",
+          description: data.message || "Could not delete submission",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Network Error",
+        description: "Could not connect to server",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -277,17 +331,27 @@ const AdminDashboard = () => {
                           <Badge variant="outline">{submission.files.length} files</Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedSubmission(submission);
-                              setIsDetailsOpen(true);
-                            }}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedSubmission(submission);
+                                setIsDetailsOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              View
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteClick(submission)}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -367,16 +431,27 @@ const AdminDashboard = () => {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-semibold">Documents ({selectedSubmission.files.length})</h3>
-                  {selectedSubmission.files.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    {selectedSubmission.files.length > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownloadAll(selectedSubmission.folder)}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download All (ZIP)
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDownloadAll(selectedSubmission.folder)}
+                      onClick={() => handleDeleteClick(selectedSubmission)}
+                      className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
                     >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download All (ZIP)
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Submission
                     </Button>
-                  )}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   {selectedSubmission.files.map((file, index) => (
@@ -409,6 +484,42 @@ const AdminDashboard = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the submission from{" "}
+              <strong>
+                {submissionToDelete?.firstName} {submissionToDelete?.lastName}
+              </strong>{" "}
+              and all associated files. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
