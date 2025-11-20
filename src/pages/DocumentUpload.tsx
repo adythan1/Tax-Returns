@@ -68,6 +68,55 @@ const DocumentUpload = () => {
       });
     });
 
+    // Send submission to backend immediately - don't wait for response
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+    console.log('Submitting to:', `${backendUrl}/api/submit-portal`);
+    
+    // Use sendBeacon for guaranteed delivery even after page navigation
+    // If sendBeacon not supported or fails, fall back to fetch with keepalive
+    let submitted = false;
+    
+    // Try sendBeacon first (best for fire-and-forget)
+    if (navigator.sendBeacon) {
+      try {
+        // Note: sendBeacon only accepts FormData, Blob, or string
+        submitted = navigator.sendBeacon(`${backendUrl}/api/submit-portal`, formData);
+        console.log('SendBeacon submission:', submitted ? 'success' : 'failed');
+      } catch (error) {
+        console.log('SendBeacon failed, falling back to fetch:', error);
+      }
+    }
+    
+    // Fallback to fetch with keepalive if sendBeacon failed
+    if (!submitted) {
+      fetch(`${backendUrl}/api/submit-portal`, {
+        method: 'POST',
+        body: formData,
+        keepalive: true, // Ensures request completes even after page navigation
+      }).then(async (res) => {
+        const data = await res.json();
+        console.log('Background submission completed:', data);
+        
+        // If submission failed, show error toast
+        if (!res.ok || !data.success) {
+          toast({
+            title: "Submission Failed",
+            description: data.message || "There was an error processing your submission. Please try again or contact support.",
+            variant: "destructive",
+            duration: 10000, // Show for 10 seconds
+          });
+        }
+      }).catch((error) => {
+        console.error('Background submission error:', error);
+        toast({
+          title: "Network Error",
+          description: "Could not connect to server. Please check your connection and try again.",
+          variant: "destructive",
+          duration: 10000,
+        });
+      });
+    }
+
     // Show processing state for 3 seconds, then show success message
     setTimeout(() => {
       // Show success message
@@ -86,28 +135,6 @@ const DocumentUpload = () => {
       setStep(1);
       setIsSubmitting(false);
     }, 3000);
-
-    // Send submission to backend in the background (don't wait for response)
-    try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
-      console.log('Submitting to:', `${backendUrl}/api/submit-portal`);
-      
-      // Fire and forget - don't await the response
-      fetch(`${backendUrl}/api/submit-portal`, {
-        method: 'POST',
-        body: formData,
-      }).then(res => res.json())
-        .then(data => {
-          console.log('Background submission completed:', data);
-        })
-        .catch(error => {
-          console.error('Background submission error:', error);
-          // Error is logged but user already saw success message
-        });
-    } catch (error) {
-      console.error('Submission error:', error);
-      // Error is logged but user already saw success message
-    }
   };
 
   const openPicker = (id: string) => () => {
