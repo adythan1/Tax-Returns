@@ -1,0 +1,51 @@
+# Apache Configuration for myquicktaxreturns.com
+# Add this to your VirtualHost configuration
+
+<VirtualHost *:443>
+    ServerName myquicktaxreturns.com
+    ServerAlias www.myquicktaxreturns.com
+    
+    # SSL Configuration (your existing SSL cert)
+    SSLEngine on
+    SSLCertificateFile /path/to/your/cert.crt
+    SSLCertificateKeyFile /path/to/your/private.key
+    SSLCertificateChainFile /path/to/your/chain.crt
+    
+    # Frontend - React app (static files)
+    DocumentRoot /var/www/accruefy/frontend
+    
+    <Directory /var/www/accruefy/frontend>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+        
+        # React Router support
+        RewriteEngine On
+        RewriteBase /
+        RewriteRule ^index\.html$ - [L]
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteCond %{REQUEST_FILENAME} !-d
+        # Don't rewrite /api requests
+        RewriteCond %{REQUEST_URI} !^/api
+        RewriteRule . /index.html [L]
+    </Directory>
+    
+    # Proxy API requests to Node.js backend
+    ProxyPreserveHost On
+    ProxyPass /api http://localhost:3001/api
+    ProxyPassReverse /api http://localhost:3001/api
+    
+    # Error and Access logs
+    ErrorLog ${APACHE_LOG_DIR}/myquicktaxreturns-error.log
+    CustomLog ${APACHE_LOG_DIR}/myquicktaxreturns-access.log combined
+</VirtualHost>
+
+# Redirect HTTP to HTTPS
+<VirtualHost *:80>
+    ServerName myquicktaxreturns.com
+    ServerAlias www.myquicktaxreturns.com
+    
+    RewriteEngine On
+    RewriteCond %{HTTPS} off
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</VirtualHost>
