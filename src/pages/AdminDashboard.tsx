@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Download, Eye, FileText, Loader2, Lock, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -39,6 +40,7 @@ const AdminDashboard = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all");
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   // const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -227,6 +229,42 @@ const AdminDashboard = () => {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
+  // Filter submissions by date
+  const filterSubmissionsByDate = (submissions: Submission[]) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    switch (dateFilter) {
+      case "today":
+        return submissions.filter(sub => {
+          const subDate = new Date(parseInt(sub.timestamp));
+          return subDate >= today;
+        });
+      
+      case "week":
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return submissions.filter(sub => {
+          const subDate = new Date(parseInt(sub.timestamp));
+          return subDate >= weekAgo;
+        });
+      
+      case "month":
+        const monthAgo = new Date(today);
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        return submissions.filter(sub => {
+          const subDate = new Date(parseInt(sub.timestamp));
+          return subDate >= monthAgo;
+        });
+      
+      case "all":
+      default:
+        return submissions;
+    }
+  };
+
+  const filteredSubmissions = filterSubmissionsByDate(submissions);
+
   // Login screen
   if (!isAuthenticated) {
     return (
@@ -287,21 +325,39 @@ const AdminDashboard = () => {
       <div className="container mx-auto px-4 py-8">
         <Card className="shadow-professional">
           <CardHeader>
-            <CardTitle>Portal Submissions</CardTitle>
-            <CardDescription>
-              {submissions.length} submission{submissions.length !== 1 ? 's' : ''} total
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Portal Submissions</CardTitle>
+                <CardDescription>
+                  {filteredSubmissions.length} of {submissions.length} submission{submissions.length !== 1 ? 's' : ''}
+                </CardDescription>
+              </div>
+              <Tabs value={dateFilter} onValueChange={(value) => setDateFilter(value as any)} className="w-auto">
+                <TabsList>
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="today">Today</TabsTrigger>
+                  <TabsTrigger value="week">This Week</TabsTrigger>
+                  <TabsTrigger value="month">This Month</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-            ) : submissions.length === 0 ? (
+            ) : filteredSubmissions.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium">No submissions yet</p>
-                <p className="text-sm">Submissions will appear here once clients use the portal</p>
+                <p className="text-lg font-medium">
+                  {submissions.length === 0 ? "No submissions yet" : "No submissions for this period"}
+                </p>
+                <p className="text-sm">
+                  {submissions.length === 0 
+                    ? "Submissions will appear here once clients use the portal"
+                    : "Try selecting a different time period"}
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -317,7 +373,7 @@ const AdminDashboard = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {submissions.map((submission) => (
+                    {filteredSubmissions.map((submission) => (
                       <TableRow key={submission.id} className="cursor-pointer hover:bg-muted/50">
                         <TableCell className="font-medium">
                           {formatDate(submission.timestamp)}
