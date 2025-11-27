@@ -325,19 +325,19 @@ const AdminDashboard = () => {
       <div className="container mx-auto px-4 py-8">
         <Card className="shadow-professional">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <CardTitle>Portal Submissions</CardTitle>
                 <CardDescription>
                   {filteredSubmissions.length} of {submissions.length} submission{submissions.length !== 1 ? 's' : ''}
                 </CardDescription>
               </div>
-              <Tabs value={dateFilter} onValueChange={(value) => setDateFilter(value as any)} className="w-auto">
-                <TabsList>
+              <Tabs value={dateFilter} onValueChange={(value) => setDateFilter(value as any)} className="w-full sm:w-auto">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="all">All</TabsTrigger>
                   <TabsTrigger value="today">Today</TabsTrigger>
-                  <TabsTrigger value="week">This Week</TabsTrigger>
-                  <TabsTrigger value="month">This Month</TabsTrigger>
+                  <TabsTrigger value="week">Week</TabsTrigger>
+                  <TabsTrigger value="month">Month</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
