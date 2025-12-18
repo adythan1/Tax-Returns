@@ -162,6 +162,7 @@ app.post('/api/submit-portal', upload.any(), async (req, res) => {
       serviceType,
       additionalInfo,
       submittedAt: new Date().toISOString(),
+      status: 'received', // Default status
       filesCount: req.files?.length || 0,
       files: filesMetadata
     };
@@ -363,6 +364,7 @@ app.get('/api/admin/submissions', (req, res) => {
           taxYear: metadata.taxYear || '',
           serviceType: metadata.serviceType || '',
           additionalInfo: metadata.additionalInfo || '',
+          status: metadata.status || 'received',
           files,
           folder
         });
@@ -477,6 +479,45 @@ app.get('/api/admin/download-zip', (req, res) => {
     if (!res.headersSent) {
       res.status(500).json({ success: false, message: 'Failed to create ZIP' });
     }
+  }
+});
+
+// Update submission status
+app.post('/api/admin/update-status', (req, res) => {
+  try {
+    const { folder, status } = req.body;
+
+    if (!folder || !status) {
+      return res.status(400).json({ success: false, message: 'Missing folder or status' });
+    }
+
+    const folderPath = path.join(uploadsDir, folder);
+    const metadataPath = path.join(folderPath, 'metadata.json');
+
+    // Security check
+    const normalizedPath = path.normalize(folderPath);
+    if (!normalizedPath.startsWith(uploadsDir)) {
+      return res.status(403).json({ success: false, message: 'Access denied' });
+    }
+
+    if (!fs.existsSync(metadataPath)) {
+      return res.status(404).json({ success: false, message: 'Submission metadata not found' });
+    }
+
+    // Read existing metadata
+    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+    
+    // Update status
+    metadata.status = status;
+    metadata.updatedAt = new Date().toISOString();
+
+    // Write back
+    fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+
+    res.json({ success: true, status: metadata.status });
+  } catch (error) {
+    console.error('Error updating status:', error);
+    res.status(500).json({ success: false, message: 'Failed to update status' });
   }
 });
 

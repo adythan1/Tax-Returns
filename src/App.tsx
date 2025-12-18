@@ -25,7 +25,7 @@ const App = () => (
         <ScrollToTop />
         <Routes>
           {/* Admin route without Layout */}
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/*" element={<AdminDashboard />} />
           
           {/* Public routes with Layout */}
           <Route path="*" element={
