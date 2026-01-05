@@ -213,9 +213,9 @@ const AdminDashboard = () => {
     }).length
   };
   const [isDetailsOpen, setIsDetailsOpen] = useState(false); // Deprecated, using activeView="detail" instead
-  // const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  // const [submissionToDelete, setSubmissionToDelete] = useState<Submission | null>(null);
-  // const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [submissionToDelete, setSubmissionToDelete] = useState<Submission | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Simple password check (in production, use proper auth)
   const handleLogin = async (e: React.FormEvent) => {
@@ -346,55 +346,59 @@ const AdminDashboard = () => {
     }
   };
 
-  // Delete submission - COMMENTED OUT (not working on server)
-  // const handleDeleteClick = (submission: Submission) => {
-  //   setSubmissionToDelete(submission);
-  //   setIsDeleteDialogOpen(true);
-  // };
+  // Delete submission
+  const handleDeleteClick = (submission: Submission) => {
+    setSubmissionToDelete(submission);
+    setIsDeleteDialogOpen(true);
+  };
 
-  // const confirmDelete = async () => {
-  //   if (!submissionToDelete) return;
+  const confirmDelete = async () => {
+    if (!submissionToDelete) return;
 
-  //   setIsDeleting(true);
-  //   try {
-  //     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
-  //     const res = await fetch(`${backendUrl}/api/admin/submission/${encodeURIComponent(submissionToDelete.folder)}`, {
-  //       method: 'POST',
-  //     });
+    setIsDeleting(true);
+    try {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+      const res = await fetch(`${backendUrl}/api/admin/submission/${encodeURIComponent(submissionToDelete.folder)}`, {
+        method: 'POST',
+      });
 
-  //     const data = await res.json();
+      const data = await res.json();
 
-  //     if (res.ok && data.success) {
-  //       toast({
-  //         title: "Deleted Successfully",
-  //         description: `Submission from ${submissionToDelete.firstName} ${submissionToDelete.lastName} has been deleted.`,
-  //       });
+      if (res.ok && data.success) {
+        toast({
+          title: "Deleted Successfully",
+          description: `Submission from ${submissionToDelete.firstName} ${submissionToDelete.lastName} has been deleted.`,
+        });
 
-  //       // Refresh submissions list
-  //       await fetchSubmissions();
+        // Refresh submissions list
+        await fetchSubmissions();
 
-  //       // Close dialogs
-  //       setIsDeleteDialogOpen(false);
-  //       setIsDetailsOpen(false);
-  //       setSubmissionToDelete(null);
-  //     } else {
-  //       toast({
-  //         title: "Delete Failed",
-  //         description: data.message || "Could not delete submission",
-  //         variant: "destructive",
-  //       });
-  //     }
-  //   } catch (error) {
-  //     console.error('Delete error:', error);
-  //     toast({
-  //       title: "Network Error",
-  //       description: "Could not connect to server",
-  //       variant: "destructive",
-  //     });
-  //   } finally {
-  //     setIsDeleting(false);
-  //   }
-  // };
+        // Close dialogs
+        setIsDeleteDialogOpen(false);
+        setSubmissionToDelete(null);
+        
+        // Navigate back if we were in detail view
+        if (activeView === 'detail') {
+          navigate('/admin/submissions');
+        }
+      } else {
+        toast({
+          title: "Delete Failed",
+          description: data.message || "Could not delete submission",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Network Error",
+        description: "Could not connect to server",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Update submission status
   const handleStatusChange = async (folder: string, newStatus: string) => {
@@ -1161,14 +1165,27 @@ const AdminDashboard = () => {
                                     </Badge>
                                   </TableCell>
                                   <TableCell className="text-right">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="opacity-0 group-hover:opacity-100 transition-all text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30"
-                                    >
-                                      View Details
-                                      <ArrowLeft className="h-4 w-4 ml-2 rotate-180" />
-                                    </Button>
+                                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteClick(submission);
+                                        }}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                                      >
+                                        View
+                                        <ArrowLeft className="h-4 w-4 ml-2 rotate-180" />
+                                      </Button>
+                                    </div>
                                   </TableCell>
                                 </TableRow>
                               ))}
@@ -1282,6 +1299,15 @@ const AdminDashboard = () => {
                         Download ZIP
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-white dark:bg-slate-900 border-red-200 dark:border-red-900/50 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 hover:border-red-300"
+                      onClick={() => handleDeleteClick(selectedSubmission)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
                   </div>
                 </div>
 
@@ -1682,6 +1708,37 @@ const AdminDashboard = () => {
         </SidebarInset>
       </div>
     </SidebarProvider>
+    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the submission
+              for <span className="font-medium text-foreground">{submissionToDelete?.firstName} {submissionToDelete?.lastName}</span> and remove all associated files from the server.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete();
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Submission"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
