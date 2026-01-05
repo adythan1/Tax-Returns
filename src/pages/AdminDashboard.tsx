@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Eye, FileText, Loader2, Lock, Trash2, LayoutDashboard, LogOut, TrendingUp, Users, Calendar, PieChart as PieChartIcon, Settings, HelpCircle, Bell, Search, ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Mail } from "lucide-react";
+import { Download, Eye, EyeOff, FileText, Loader2, Lock, Trash2, LayoutDashboard, LogOut, TrendingUp, Users, Calendar, PieChart as PieChartIcon, Settings, HelpCircle, Bell, Search, ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Sidebar,
@@ -36,6 +36,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Navigation } from "@/components/Layout";
 import {
   Select,
   SelectContent,
@@ -71,7 +72,9 @@ interface Submission {
 const AdminDashboard = () => {
   const { toast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all");
@@ -176,20 +179,43 @@ const AdminDashboard = () => {
   // Simple password check (in production, use proper auth)
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Replace with your actual password
-    if (password === "admin123") {
-      setIsAuthenticated(true);
+    
+    // Hardcoded credentials for demonstration
+    const ADMIN_EMAIL = "admin@example.com";
+    const ADMIN_PASSWORD = "admin123";
+
+    if (!email || !password) {
       toast({
-        title: "Login Successful",
-        description: "Welcome to the admin dashboard",
-      });
-    } else {
-      toast({
-        title: "Invalid Password",
-        description: "Please try again",
+        title: "Missing Credentials",
+        description: "Please enter both email and password.",
         variant: "destructive",
       });
+      return;
     }
+
+    if (email !== ADMIN_EMAIL) {
+      toast({
+        title: "Invalid Email",
+        description: "The email address provided is not authorized.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password !== ADMIN_PASSWORD) {
+      toast({
+        title: "Invalid Password",
+        description: "The password provided is incorrect.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAuthenticated(true);
+    toast({
+      title: "Login Successful",
+      description: "Welcome to the admin dashboard",
+    });
   };
 
   // Fetch submissions from backend
@@ -460,34 +486,91 @@ const AdminDashboard = () => {
   // Login screen
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5">
-        <Card className="w-full max-w-md shadow-professional">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <Lock className="h-6 w-6 text-primary" />
+      <div className="min-h-screen flex flex-col bg-slate-50 relative overflow-hidden">
+        <Navigation />
+        
+        {/* Background decoration */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          {/* Grid Pattern */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+          
+          {/* Animated Blobs */}
+          <div className="absolute -top-[30%] -right-[10%] w-[70%] h-[70%] rounded-full bg-primary/5 blur-3xl animate-pulse duration-[10000ms]" />
+          <div className="absolute top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-accent/10 blur-3xl animate-pulse duration-[8000ms] delay-1000" />
+          <div className="absolute -bottom-[10%] right-[20%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-3xl animate-pulse duration-[12000ms] delay-2000" />
+          
+          {/* Floating Shapes */}
+          <div className="absolute top-1/4 left-1/4 w-12 h-12 border-4 border-primary/10 rounded-xl animate-bounce duration-[3000ms]" />
+          <div className="absolute bottom-1/3 right-1/4 w-8 h-8 bg-accent/20 rounded-full animate-ping duration-[2000ms]" />
+          <div className="absolute top-1/3 right-1/3 w-4 h-4 bg-primary/20 rounded-full" />
+        </div>
+
+        <div className="flex-1 flex items-center justify-center p-4 relative z-10">
+          <Card className="w-full max-w-md shadow-2xl border-t-4 border-t-primary bg-white/90 backdrop-blur-sm">
+          <CardHeader className="text-center space-y-2">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-primary/20">
+              <Lock className="h-8 w-8 text-white" />
             </div>
-            <CardTitle className="text-2xl">Admin Dashboard</CardTitle>
-            <CardDescription>Enter your password to access the dashboard</CardDescription>
+            <CardTitle className="text-3xl font-bold text-gray-900">Welcome Back</CardTitle>
+            <CardDescription className="text-base">
+              Sign in to access the admin dashboard
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="admin@example.com"
+                    className="pl-10"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter admin password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    className="pl-10 pr-10"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <span className="sr-only">
+                      {showPassword ? "Hide password" : "Show password"}
+                    </span>
+                  </Button>
+                </div>
               </div>
-              <Button type="submit" className="w-full">
-                Login
+              <Button type="submit" className="w-full h-11 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200">
+                Sign In
               </Button>
             </form>
           </CardContent>
         </Card>
+        </div>
       </div>
     );
   }
