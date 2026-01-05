@@ -51,8 +51,8 @@ const Contact = () => {
     {
       icon: Mail,
       title: "Email",
-      details: "info@mytaxreturns.com",
-      link: "mailto:info@mytaxreturns.com"
+      details: "myquicktaxreturns@gmail.com",
+      link: "mailto:myquicktaxreturns@gmail.com"
     },
     {
       icon: Phone,
