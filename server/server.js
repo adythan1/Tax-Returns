@@ -486,6 +486,8 @@ app.get('/api/admin/download-zip', (req, res) => {
 app.post('/api/admin/update-status', (req, res) => {
   try {
     const { folder, status } = req.body;
+    
+    console.log(`Update status request: folder="${folder}", status="${status}"`);
 
     if (!folder || !status) {
       return res.status(400).json({ success: false, message: 'Missing folder or status' });
@@ -493,14 +495,18 @@ app.post('/api/admin/update-status', (req, res) => {
 
     const folderPath = path.join(uploadsDir, folder);
     const metadataPath = path.join(folderPath, 'metadata.json');
+    
+    console.log(`Checking metadata at: ${metadataPath}`);
 
     // Security check
     const normalizedPath = path.normalize(folderPath);
     if (!normalizedPath.startsWith(uploadsDir)) {
+      console.log(`Security check failed: ${normalizedPath} not in ${uploadsDir}`);
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
 
     if (!fs.existsSync(metadataPath)) {
+      console.log(`Metadata not found at: ${metadataPath}`);
       return res.status(404).json({ success: false, message: 'Submission metadata not found' });
     }
 
