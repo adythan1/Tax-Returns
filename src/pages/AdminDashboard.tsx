@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Eye, EyeOff, FileText, Loader2, Lock, Trash2, LayoutDashboard, LogOut, TrendingUp, Users, Calendar, PieChart as PieChartIcon, Settings, HelpCircle, Bell, Search, ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Mail } from "lucide-react";
+import { Download, Eye, EyeOff, FileText, Loader2, Lock, Trash2, LayoutDashboard, LogOut, TrendingUp, Users, Calendar, PieChart as PieChartIcon, Settings, HelpCircle, Bell, Search, ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Mail, Sun, Moon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Sidebar,
@@ -37,6 +37,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Navigation } from "@/components/Layout";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -71,16 +79,42 @@ interface Submission {
 
 const AdminDashboard = () => {
   const { toast } = useToast();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  // Initialize state from localStorage if available
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem("adminAuth") === "true";
+  });
+  
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem("theme") === "dark";
+  });
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all");
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Effect to handle theme changes
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [isDarkMode]);
+
+  // Effect to persist auth state
+  useEffect(() => {
+    localStorage.setItem("adminAuth", isAuthenticated.toString());
+  }, [isAuthenticated]);
 
   const getActiveView = () => {
     const path = location.pathname;
@@ -108,14 +142,21 @@ const AdminDashboard = () => {
       if (sub) setSelectedSubmission(sub);
     }
   }, [location.pathname, submissions]);
-
-  const [isDarkMode, setIsDarkMode] = useState(false);
   
   // New state for filtering and pagination
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  
+  // Settings state
+  const [emailAlerts, setEmailAlerts] = useState(() => {
+    return localStorage.getItem("emailAlerts") !== "false"; // Default to true
+  });
+
+  useEffect(() => {
+    localStorage.setItem("emailAlerts", emailAlerts.toString());
+  }, [emailAlerts]);
 
   // Prepare chart data
   const chartData = React.useMemo(() => {
@@ -177,7 +218,7 @@ const AdminDashboard = () => {
   // const [isDeleting, setIsDeleting] = useState(false);
 
   // Simple password check (in production, use proper auth)
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Hardcoded credentials for demonstration
@@ -193,12 +234,18 @@ const AdminDashboard = () => {
       return;
     }
 
+    setIsLoggingIn(true);
+
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
     if (email !== ADMIN_EMAIL) {
       toast({
         title: "Invalid Email",
         description: "The email address provided is not authorized.",
         variant: "destructive",
       });
+      setIsLoggingIn(false);
       return;
     }
 
@@ -208,10 +255,12 @@ const AdminDashboard = () => {
         description: "The password provided is incorrect.",
         variant: "destructive",
       });
+      setIsLoggingIn(false);
       return;
     }
 
     setIsAuthenticated(true);
+    setIsLoggingIn(false);
     toast({
       title: "Login Successful",
       description: "Welcome to the admin dashboard",
@@ -534,7 +583,12 @@ const AdminDashboard = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <Button variant="link" className="p-0 h-auto text-xs text-primary" onClick={() => toast({ title: "Contact Support", description: "Please contact the system administrator to reset your password." })}>
+                    Forgot password?
+                  </Button>
+                </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -564,8 +618,19 @@ const AdminDashboard = () => {
                   </Button>
                 </div>
               </div>
-              <Button type="submit" className="w-full h-11 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200">
-                Sign In
+              <Button 
+                type="submit" 
+                className="w-full h-11 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-200"
+                disabled={isLoggingIn}
+              >
+                {isLoggingIn ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
               </Button>
             </form>
           </CardContent>
@@ -660,39 +725,78 @@ const AdminDashboard = () => {
             </SidebarGroup>
           </SidebarContent>
           <SidebarFooter className="border-t border-sidebar-border p-4">
-            <div className="flex items-center gap-3 mb-4">
-              <Avatar className="h-9 w-9 border border-sidebar-border">
-                <div className="flex h-full w-full items-center justify-center bg-sidebar-accent text-sidebar-accent-foreground font-medium">
-                  AD
-                </div>
-              </Avatar>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-sidebar-foreground">Admin User</span>
-                <span className="text-xs text-sidebar-foreground/70">admin@accruefy.com</span>
-              </div>
-            </div>
-            <div className="text-xs text-sidebar-foreground/40 font-mono">Version 2.0.1</div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="w-full justify-start p-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground h-auto">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-9 w-9 border border-sidebar-border">
+                      <div className="flex h-full w-full items-center justify-center bg-sidebar-accent text-sidebar-accent-foreground font-medium">
+                        AD
+                      </div>
+                    </Avatar>
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-medium text-sidebar-foreground">Admin User</span>
+                      <span className="text-xs text-sidebar-foreground/70">admin@accruefy.com</span>
+                    </div>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">Admin User</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      admin@accruefy.com
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/admin/settings")}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/admin/support")}>
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  <span>Support</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setIsAuthenticated(false)}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <div className="text-xs text-sidebar-foreground/40 font-mono mt-4">Version 2.0.1</div>
           </SidebarFooter>
-          <div className="p-4 border-t border-sidebar-border">
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" 
-              onClick={() => setIsAuthenticated(false)}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
-          </div>
         </Sidebar>
         
         <SidebarInset className="flex-1 overflow-auto">
           <header className="flex h-16 items-center gap-4 border-b bg-background px-6">
             <SidebarTrigger />
             <div className="flex-1 flex items-center justify-between">
-              <h1 className="text-lg font-semibold capitalize">
-                {activeView === "overview" ? "Dashboard Overview" : activeView}
-              </h1>
+              <div className="flex flex-col">
+                <h1 className="text-lg font-semibold capitalize">
+                  {activeView === "overview" ? "Dashboard Overview" : activeView}
+                </h1>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <span className="hover:text-primary cursor-pointer" onClick={() => navigate("/admin/overview")}>Dashboard</span>
+                  {activeView !== "overview" && (
+                    <>
+                      <ChevronRight className="h-3 w-3 mx-1" />
+                      <span className="capitalize">{activeView}</span>
+                    </>
+                  )}
+                </div>
+              </div>
               <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-muted-foreground"
+                  onClick={() => setIsDarkMode(!isDarkMode)}
+                >
+                  {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                </Button>
                 <Button variant="ghost" size="icon" className="text-muted-foreground">
                   <Search className="h-5 w-5" />
                 </Button>
@@ -791,20 +895,15 @@ const AdminDashboard = () => {
                               allowDecimals={false}
                             />
                             <Tooltip 
-                              cursor={{ fill: 'transparent' }}
                               contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                             />
-                            <Bar 
-                              dataKey="submissions" 
-                              fill="hsl(215, 100%, 18%)" 
-                              radius={[4, 4, 0, 0]} 
-                              barSize={40}
-                            />
+                            <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
                     </CardContent>
                   </Card>
+
                   <Card className="col-span-3 shadow-sm">
                     <CardHeader>
                       <CardTitle>Filing Status</CardTitle>
@@ -839,6 +938,77 @@ const AdminDashboard = () => {
                           </div>
                         )}
                       </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                  <Card className="col-span-3 shadow-sm">
+                    <CardHeader>
+                      <CardTitle>Recent Submissions</CardTitle>
+                      <CardDescription>Latest 5 submissions received</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {submissions.slice(0, 5).map((submission) => (
+                          <div key={submission.id} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9">
+                                <AvatarFallback className="bg-primary/10 text-primary">
+                                  {submission.firstName[0]}{submission.lastName[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium leading-none">
+                                  {submission.firstName} {submission.lastName}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {new Date(parseInt(submission.timestamp)).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <Badge variant={
+                              submission.status === 'completed' ? 'default' : 
+                              submission.status === 'processing' ? 'secondary' : 
+                              'outline'
+                            }>
+                              {submission.status || 'received'}
+                            </Badge>
+                          </div>
+                        ))}
+                        {submissions.length === 0 && (
+                          <div className="text-center text-sm text-muted-foreground py-4">
+                            No recent submissions
+                          </div>
+                        )}
+                      </div>
+                      <Button variant="ghost" className="w-full mt-4 text-xs" onClick={() => navigate("/admin/submissions")}>
+                        View All Submissions <ArrowLeft className="ml-2 h-3 w-3 rotate-180" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="col-span-4 shadow-sm">
+                    <CardHeader>
+                      <CardTitle>Quick Actions</CardTitle>
+                      <CardDescription>Common tasks and shortcuts</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-2 gap-4">
+                      <Button variant="outline" className="h-24 flex flex-col items-center justify-center gap-2 hover:border-primary hover:text-primary transition-colors" onClick={() => navigate("/admin/submissions")}>
+                        <FileText className="h-6 w-6" />
+                        <span>View Submissions</span>
+                      </Button>
+                      <Button variant="outline" className="h-24 flex flex-col items-center justify-center gap-2 hover:border-primary hover:text-primary transition-colors" onClick={() => navigate("/admin/users")}>
+                        <Users className="h-6 w-6" />
+                        <span>Manage Users</span>
+                      </Button>
+                      <Button variant="outline" className="h-24 flex flex-col items-center justify-center gap-2 hover:border-primary hover:text-primary transition-colors" onClick={() => navigate("/admin/settings")}>
+                        <Settings className="h-6 w-6" />
+                        <span>System Settings</span>
+                      </Button>
+                      <Button variant="outline" className="h-24 flex flex-col items-center justify-center gap-2 hover:border-primary hover:text-primary transition-colors" onClick={() => navigate("/admin/support")}>
+                        <HelpCircle className="h-6 w-6" />
+                        <span>Help & Support</span>
+                      </Button>
                     </CardContent>
                   </Card>
                 </div>
@@ -1394,7 +1564,7 @@ const AdminDashboard = () => {
                            <Label className="text-base font-medium">Email Alerts</Label>
                            <p className="text-xs text-slate-500 dark:text-slate-400">Receive emails for new submissions</p>
                          </div>
-                         <Switch defaultChecked />
+                         <Switch checked={emailAlerts} onCheckedChange={setEmailAlerts} />
                        </div>
                      </CardContent>
                    </Card>
@@ -1419,7 +1589,7 @@ const AdminDashboard = () => {
                          </div>
                        </div>
                        <div className="flex justify-end pt-2">
-                         <Button variant="outline">Update Password</Button>
+                         <Button variant="outline" onClick={() => toast({ title: "Password Updated", description: "Your password has been successfully updated." })}>Update Password</Button>
                        </div>
                      </CardContent>
                    </Card>
