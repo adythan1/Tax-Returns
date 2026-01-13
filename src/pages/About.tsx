@@ -57,20 +57,23 @@ const About = () => {
               <h2 className="text-3xl lg:text-4xl font-bold mb-6">Our Story</h2>
               <div className="space-y-4 text-base lg:text-lg text-muted-foreground">
                 <p>
-                  QuickTaxReturns was founded with a simple yet powerful vision: to make professional 
-                  tax and accounting services accessible to everyone. What started as a small 
-                  practice has grown into a trusted firm serving thousands of clients nationwide.
+                  QuickTaxReturns was founded with a simple yet powerful vision: to make professional tax 
+                  and accounting services accessible to everyone. What began as a small practice in Waltham, 
+                  Massachusetts, serving individuals and small businesses in the Greater Boston area, has grown 
+                  into a trusted firm supporting thousands of clients nationwide.
                 </p>
                 <p>
-                  Over the years, we've helped individuals, families, and businesses navigate 
-                  complex tax regulations, maximize their returns, and achieve financial peace 
-                  of mind. Our success is built on a foundation of expertise, integrity, and 
-                  unwavering commitment to client satisfaction.
+                 Over the years, we’ve helped individuals, families, and businesses across Massachusetts 
+                 and beyond navigate complex tax regulations, maximize returns, and achieve greater financial 
+                 confidence. Our growth has been driven by deep technical expertise, a strong commitment to 
+                 integrity, and a client-first approach that prioritizes clarity, accuracy, and peace of mind.
+
                 </p>
                 <p>
-                  Today, QuickTaxReturns stands as a leading provider of tax and accounting services, 
-                  combining traditional expertise with modern technology to deliver efficient, 
-                  accurate, and personalized solutions for every client.
+                  Today, QuickTaxReturns continues to build on its local roots while leveraging modern 
+                  technology to deliver efficient, personalized tax and accounting solutions. From the 
+                  Greater Boston region to clients across the country, we remain focused on providing 
+                  reliable guidance, responsive service, and results our clients can trust.
                 </p>
               </div>
             </div>

@@ -29,6 +29,7 @@ const DocumentUpload = () => {
     form1098T: [] as File[],
     form1098E: [] as File[],
     k1: [] as File[],
+    voidedCheck: [] as File[],
     other: [] as File[],
   });
 
@@ -187,10 +188,20 @@ const DocumentUpload = () => {
 
   const validateStep2 = () => {
     // Radix Selects are not native <select>, so enforce manually
-    if (!filingStatus || !taxYear || !serviceType || !firstTimeFiling) {
+    const isIndividual = ['individual', 'both', 'amendment'].includes(serviceType);
+    
+    // Basic validation for fields that are always required
+    if (!serviceType || !taxYear || !firstTimeFiling) {
       toast({ title: "Missing information", description: "Please complete all required fields to continue." });
       return false;
     }
+
+    // Conditional validation for filing status
+    if (isIndividual && !filingStatus) {
+      toast({ title: "Missing information", description: "Please select a filing status." });
+      return false;
+    }
+
     return true;
   };
 
@@ -290,20 +301,21 @@ const DocumentUpload = () => {
                     
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="filingStatus">Filing Status *</Label>
-                        <Select value={filingStatus} onValueChange={setFilingStatus}>
-                          <SelectTrigger id="filingStatus">
-                            <SelectValue placeholder="Select status" />
+                        <Label htmlFor="serviceType">Type of Service *</Label>
+                        <Select value={serviceType} onValueChange={setServiceType}>
+                          <SelectTrigger id="serviceType">
+                            <SelectValue placeholder="Select service type" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="single">Single</SelectItem>
-                            <SelectItem value="married-joint">Married Filing Jointly</SelectItem>
-                            <SelectItem value="married-separate">Married Filing Separately</SelectItem>
-                            <SelectItem value="hoh">Head of Household</SelectItem>
-                            <SelectItem value="widow">Qualifying Widow(er)</SelectItem>
+                            <SelectItem value="individual">Individual Tax Filing</SelectItem>
+                            <SelectItem value="business">Business Tax Services</SelectItem>
+                            <SelectItem value="both">Both Individual & Business</SelectItem>
+                            <SelectItem value="consultation">Tax Consultation</SelectItem>
+                            <SelectItem value="amendment">Tax Amendment</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
+
                       <div className="space-y-2">
                         <Label htmlFor="taxYear">Tax Year *</Label>
                         <Select value={taxYear} onValueChange={setTaxYear}>
@@ -319,21 +331,23 @@ const DocumentUpload = () => {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="serviceType">Type of Service *</Label>
-                      <Select value={serviceType} onValueChange={setServiceType}>
-                        <SelectTrigger id="serviceType">
-                          <SelectValue placeholder="Select service type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="individual">Individual Tax Filing</SelectItem>
-                          <SelectItem value="business">Business Tax Services</SelectItem>
-                          <SelectItem value="both">Both Individual & Business</SelectItem>
-                          <SelectItem value="consultation">Tax Consultation</SelectItem>
-                          <SelectItem value="amendment">Tax Amendment</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {['individual', 'both', 'amendment'].includes(serviceType) && (
+                      <div className="space-y-2 animate-fade-in">
+                        <Label htmlFor="filingStatus">Filing Status *</Label>
+                        <Select value={filingStatus} onValueChange={setFilingStatus}>
+                          <SelectTrigger id="filingStatus">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="single">Single</SelectItem>
+                            <SelectItem value="married-joint">Married Filing Jointly</SelectItem>
+                            <SelectItem value="married-separate">Married Filing Separately</SelectItem>
+                            <SelectItem value="hoh">Head of Household</SelectItem>
+                            <SelectItem value="widow">Qualifying Widow(er)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
 
                     <div className="space-y-2">
                       <Label htmlFor="firstTimeFiling">First time filing with us? *</Label>
@@ -570,6 +584,54 @@ const DocumentUpload = () => {
                         </AccordionContent>
                       </AccordionItem>
 
+                      {/* Banking Information */}
+                      <AccordionItem value="banking" className="border rounded-lg px-4">
+                        <AccordionTrigger className="text-base font-medium">Banking Information</AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-4 pt-2">
+                            {([
+                              { key: "voidedCheck", label: "Bank Info (Voided Check)" },
+                            ] as { key: DocKey; label: string }[]).map((field) => {
+                              const inputId = `file-${field.key}`;
+                              return (
+                                <div key={field.key} className="space-y-2">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <Label htmlFor={inputId} className="font-normal">{field.label}</Label>
+                                    <div className="flex items-center gap-2">
+                                      {docs[field.key].length > 0 && (
+                                        <span className="text-xs rounded-full bg-secondary/40 px-2 py-1 text-foreground/80">
+                                          {docs[field.key].length} file{docs[field.key].length > 1 ? 's' : ''}
+                                        </span>
+                                      )}
+                                      <input
+                                        type="file"
+                                        id={inputId}
+                                        multiple
+                                        onChange={handleDocChange(field.key)}
+                                        className="hidden"
+                                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                      />
+                                      <Button type="button" variant="outline" size="sm" onClick={openPicker(inputId)}>Upload</Button>
+                                    </div>
+                                  </div>
+                                  {docs[field.key].length > 0 && (
+                                    <div className="flex flex-wrap gap-2">
+                                      {docs[field.key].map((file, index) => (
+                                        <span key={index} className="inline-flex items-center gap-2 rounded-md border bg-muted px-2 py-1 text-xs">
+                                          <FileText className="h-3.5 w-3.5 text-primary" />
+                                          <span className="max-w-[200px] truncate">{file.name}</span>
+                                          <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => removeDocFile(field.key, index)}>×</button>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
                       {/* Other */}
                       <AccordionItem value="other" className="border rounded-lg px-4">
                         <AccordionTrigger className="text-base font-medium">Other Documents</AccordionTrigger>
@@ -680,7 +742,7 @@ const DocumentUpload = () => {
                     <p className="font-medium mb-1">Need Help?</p>
                     <p className="text-muted-foreground">
                       If you have questions about which documents to upload or need assistance with the form, 
-                      please contact us at <a href="mailto:info@mytaxreturns.com" className="text-primary hover:underline">info@mytaxreturns.com</a> or 
+                      please contact us at <a href="mailto:myquicktaxreturns@gmail.com" className="text-primary hover:underline">myquicktaxreturns@gmail.com</a> or 
                       call <a href="tel:+16175600821" className="text-primary hover:underline">+1 617 5600 821</a>
                     </p>
                   </div>

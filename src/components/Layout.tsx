@@ -103,9 +103,9 @@ const Footer = () => {
     <footer className="relative border-t bg-muted/30">
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-info via-accent to-success opacity-40" />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
           {/* Brand */}
-          <div>
+          <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-hero shadow-colored">
                 <FileText className="h-6 w-6 text-primary-foreground" />
@@ -145,21 +145,13 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Newsletter */}
+          {/* Address */}
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground/90 mb-4">Stay Updated</h3>
-            <p className="text-sm text-muted-foreground mb-3">Get tax tips and updates straight to your inbox.</p>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                // basic UX feedback; production would call an API
-                alert("Thanks for subscribing!");
-              }}
-              className="flex gap-2"
-            >
-              <Input type="email" placeholder="Your email" className="bg-background" required />
-              <Button type="submit" className="whitespace-nowrap">Subscribe</Button>
-            </form>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground/90 mb-4">Address</h3>
+            <address className="not-italic text-sm text-muted-foreground">
+              56 Russell Street, Suite A<br />
+              Waltham, MA 02453
+            </address>
           </div>
         </div>
 
