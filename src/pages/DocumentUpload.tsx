@@ -5,9 +5,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, FileText, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, FileText, CheckCircle2, AlertCircle, Download, ClipboardList } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
+
+const templates = [
+  { name: "Tax Documentation Checklist (Start Here)", file: "Tax Documentation Checklist - Individual.pdf", type: "checklist" },
+  { name: "Caregiving Company Financial Statements", file: "Caregiving Company_Financial_Statements Template.xlsx", type: "template" },
+  { name: "Personal Finance Template", file: "Personal Finance Template.xlsx", type: "template" },
+  { name: "Schedule C Worksheet", file: "Schedule C Worksheet.xlsx", type: "template" },
+  { name: "Transport Company Financial Statements", file: "Transport_Company_Financial Statements Template.xlsm.xlsx", type: "template" }
+];
 
 const DocumentUpload = () => {
   const { toast } = useToast();
@@ -382,6 +390,39 @@ const DocumentUpload = () => {
                   {/* Portal: Discrete Document Uploads */}
                   <div ref={docsRef} className={step === 3 ? "space-y-6 pt-4 border-t" : "hidden"}>
                     <h3 className="text-lg font-semibold">Required Documents</h3>
+                    
+                    {/* Templates Section */}
+                    <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-100 dark:border-blue-900">
+                      <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Helpful Resources & Templates
+                      </h4>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                        Download the checklist to ensure you have everything, and use the templates to organize your financial data.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {templates.map((template) => (
+                          <a 
+                            key={template.file}
+                            href={`/templates/${template.file}`} 
+                            download
+                            className={`flex items-center gap-2 p-2 rounded border transition-colors text-sm no-underline ${
+                              template.type === 'checklist' 
+                                ? 'bg-indigo-50 dark:bg-indigo-950 border-indigo-200 dark:border-indigo-800 hover:border-indigo-400 text-indigo-900 dark:text-indigo-100 font-medium'
+                                : 'bg-white dark:bg-slate-900 border-blue-200 dark:border-blue-800 hover:border-blue-400 text-blue-900 dark:text-blue-100'
+                            }`}
+                          >
+                            {template.type === 'checklist' ? (
+                              <ClipboardList className="h-4 w-4 text-indigo-600 shrink-0" />
+                            ) : (
+                              <Download className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                            )}
+                            <span className="truncate" title={template.name}>{template.name}</span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+
                     <p className="text-sm text-muted-foreground">Upload copies of all relevant documents. Most clients have 3-5 W2 forms.</p>
 
                     <Accordion type="multiple" className="w-full">
